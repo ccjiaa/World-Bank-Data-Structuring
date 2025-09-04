@@ -1,0 +1,128 @@
+CLASS DESIGN
+
+The classes implemented were the resizingArray class and timeSeries class, as well as a main class to set off the above two classes.
+
+ResizingArray mimics the standard library vector class, functioning as a resizeable array. It is implemented as a
+template so that I could make resizeable arrays of different datatypes since all of them would use similar functions. 
+This is useful because I decided to store year and data values in arrays due to easy access to the middle of the dataset, 
+which helps with accessing specific years. This class has four member variables: one to store the number of values in the 
+array, one to store the maximum capacity of the array, one to store the number of "valid" values, and one to store the 
+dynamic array. The reason there's a number of values is to keep track of the number of values actually filling the capacity
+of the array. The capacity is to keep track of the maximum number of values allowed in the array so that it knows when it needs
+to resize. The numValidValues is used as for the purposes of project 1 I use the resizeAble array to store invalid data, so 
+it is useful to keep track of non-invalid data for certain functions mentioned later in the TimerSeries class. The array is 
+dynamically allocated because we want it to be resizeable, which means it doesn't use a set about of memory. 
+
+The following list explains the class methods. 
+
+A constructor is used to build the object and a destructor is used to free the memory allocated to the dynamically allocated 
+array in the class. Used to ensure no memory leaks. 
+
+Print prints all values in the array. It is used mainly for testing purposes, although it still functions as a way to visualize
+all the values in the array if that is necessary.
+
+AppendVal appends the given value to the end of the array. This is used to quickly insert elements into the array as by using 
+the numValues member variable, it can insert values in O(1) time. 
+
+InsertVal inserts a given value into a given index of the array. Like append, this is used to insert elements into the array.
+However, it is more flexible as you can insert the value in any valid index, though at the cost of being O(N) time. 
+
+DeleteVal deletes a value at a given index of the array. It is not used in project 1, however, it was implemented to reduce 
+work in the future. 
+
+EmptyArray empties the array. It is also not used during this project but can be useful in the future for quick resetting of 
+the array. 
+
+DoubleCapacity doubles the capacity of the array by creating a new array of double capacity, copying all values in the old array
+to the new array, and then deleting the old array. This function is is called by appendVal and insertVal when they want to add a 
+value but have reached capacity. This function is core to the resizing ability of the ResizingArray.
+
+HalveCapaity halves the capacity of the array by creating a new array of half capacity, copying all values in the old array to the
+new array, and then deleting the old array. This function is called by deleteVal when the delete results in the number of values in
+array being equal to or less than a quarter of it's capacity. This function is core to the resizing ability of the ResizingArray.
+
+IsFull checks if the array is at capacity. It is called to check if the program needs to double capacity. 
+
+IsQuartered checks if the array contains a number of values that is equal to a quarter of the capacity. It is not used in this project
+but it is called to check if the program to halve capacity. 
+
+IsEmpty checks if the array no longer contains values. It is useful when I need to check if the array is empty for corner cases. 
+
+IsEmptyValid checks if the array contains no valid values (values >= 0). It is useful when I need to check if the array contains
+no valid data for corner cases. 
+
+The following are simply getters that give access to the member variables: getNumValues, getCapacity, getNumValidValues, getArray
+
+IncrementNumValidValues increments (+1) numValidValues. Used because sometimes the number of valid values increases without using
+the insertVal or appendVal functions (e.g. changing an invalid value to a valid value, like with the "udpate" function in the 
+TimerSeries class)
+
+Finally the operator overload is used to enable easy and familar access to the ResizeableArray, just like a normal array. 
+
+-----
+-----
+The TimeSeries class implements all functions given in the project 1 PDF. 
+
+The member variables are used to store the csv file seriesName, seriesCode, two ResizeableArrays for year and data storage, and two
+doubles for the best fit slope and y-intercept for easy access to these values from the rest of the class. seriesName and seriesCode
+is information that is not used for this lab, but will likely be used in the future. The resizeAble arrays are used because users can
+add or delete (though not in project 1) values, thus needing them to be resizeable. 
+
+A constructor and destructor are used to initialize and delete the TimeSeries object without leaking memory. 
+
+RunCommands is a while loop that takes user input and uses that to run all other class methods. It is used to that user input
+can be converted to function calls. 
+
+Load loads a given file and places all year and data values into the class arrays. It also initializes the other member variables. 
+
+Print prints all year data pairs in the form (y, d). If there is no valid data pairs to print, output failure. 
+
+Add adds a new year data pair to their respective ResizeableArrays, but only if the given year does not yet have valid data. It calls
+insertVal if the year given is not year in the year list, otherwise it simply changes the value of the year from -1 to the given data
+value. It outputs success if the insert is completed and failure if it's not. 
+
+Update updates a year with existing valid data to a given data value. It outputs success if the data value was changed and failure
+if there was no valid data in that year. 
+
+Mean calculates the mathmatical average of the valid data in the TimeSeries. It does this by summing valid data and then dividing it
+by the number of valid year data pairs in the TimeSeries. 
+
+Is_Monotonic checks if the TimeSeries' data is monotonic (never decreasing or never increasing). It has three special cases due to 
+needing to compare two indexes, which cannot be done when the number of values is less than 2, and is not necessary when the number
+of values is less than 3 (since a system of 2 points will always be monotonic). 
+
+Best_Fit implements a complicated best fit formula which calculates the slope and y-intercept of the line fo best fit for the data of
+TimeSeries. It calculates each individual path of the equation first by iterating through the array and doing the correct mathematical
+increments, then it substitutes the values into the best fit formula. It outputs success if a slope and y-intercept were found, and 
+failure if there were no valid data to find the line of best fit. 
+
+The following 6 methods are simply getters for the member variables: getSeriesName, getSeriesCode, getYearList, getDataList, getM, getB
+
+The following 2 methods were used for testing purposes to print out the dataList and yearList: printDataList, printYearList
+
+-----
+-----
+Main simply instantiates a TimeSeries object and then calls RunCommands to set up the user input functionality. 
+
+
+ALTERNATIVES AND JUSTIFICATION
+
+One choice I made was choosing to add invalid data into the yearList and dataList. I did this because it makes updates much quicker, 
+since I only need to change the data value, as the year is already in the list. It also ensures that my adds are sorted in ascending
+order, since I can se the smallest and largest years in the TimeSeries before the add is done. It is also easier to keep track of 
+the years that were read/added into the TimeSeries since they're all present in the ResizeableArrays. 
+
+The downside of keep invalid data is that I have to make conditionals to ignore the invalid data in multiple methods, such as print, 
+mean, is_monotonic, and best_fit, which increases their time complexity. However, I believe that the increased time clarity for add 
+and update is worth the above drawback. 
+
+I also decided to place my main class in it's own cpp file because this keeps my main class clean, and will hopefully allow for easier 
+debugging in the future as all my functions and "moving parts" are in my h files. This is also what I have learned as good object-oriented
+programming behavior. 
+
+
+RUNTIME ANALYSIS
+
+The worst-case runtime of my UPDATE() function is linear big-O of O(N) because I would have to iterate through the entire array. The worst case input for my UPDATE() function would be one where the given year isn't in the array of years or if it is at the end of my array. This is because my code works by iterating through the entire yearList array, and updates the data at the target year with the given data if that target year is in the array and already has valid data. In the worst case where the given year isn't in my yearList array or at the end of the array, my program would iterate through the entire array before returning an output. Taking N as the length of the array, this means that in worst case I will do N iterations of constant work (every loop runs at most 2 conditionals so O(1) time), thus as there are more inputs the runtime increases linearly, which is O(N*1) = O(N) linear big-O time complexity. Thus, the worst-case runtime of my UPDATE() function is linear big-O of O(N).
+
+When given the best case scenario, the runtime for my MONOTONIC function is big-o o(1) constant time because it will only perform three operations regardless of the input size changes. The best case scenario for my MONOTONIC function would be one when the second comparison is different from the first comparison, so my function will automatically return false as monotonicity is already deemed false. My MONOTONIC function works by first checking if the first comparison is ascending or descending, and then checking if all future comparisons continue to be ascending or descending. When a comparison between first and second and second and third differ, my MONOTONIC function will break out of it's loop, return false, and output that the TimeSeries is not monotonic after only 3 iterations, regardless of if input size increases. Thus, this means that with best case sceario, my MONOTONIC function will always end in after three iterations regardless of the number of data points in the TimeSeries, which means the iteration is done in constant O(1) time hence a constant runtime. Moreover, the three iterations all only do constant O(1) work as they are simply one condtional check (constant time), followed by one std::cout command (constant time), and then followed by one return (constant time) when given the best case input. Thus, the best-case runtime for my MONOTONIC function is O(1*1) or constant runtime. 
