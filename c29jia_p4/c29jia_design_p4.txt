@@ -1,0 +1,82 @@
+CLASS DESIGN
+
+BTree, BTreeNode, resizingArray, and timeSeries were unchanged for project 4, and are thus still the same as project 3. 
+-----
+-----
+The HashTable class is used to create a custom hash table. It has two member variables: numVal and arraySize. NumVal is used to keep track of how many values are filled in the hashtable. It is not necessary for project 4, but may be useful in the future. ArraySize is used to keep track of the maximum capacity of the hashtable. For p4, it will always be 512, thus it is hard coded to be 512. However, if in future projects I need flexible hashtable capcities, then arraySize will be a useful variables to kep track of the size. 
+
+HashTable() is the constructor, it sets numVal and arraySize to their default values, being 0 and 512 respectively. 
+
+~HashTable() is the destructor, it iterates through the hashtable to call delete on each singleCountryTimeSeries in the hashtable to ensure no memory leaks. 
+
+CalcHash() calculates a hashcode using the given countryCode. It converts the given countryCode from ASCII values to ints, shifts their such that 'A' becomes 0 and 'Z' becomes 25, and then uses two helper functions, firstHash() and secondHash(), to calculate values, and then sums their results according to the equation given in the project 4 specification document. This function is necessary to create a hashtable. 
+
+FistHash() is a helper function for calcHash(). It takes a sum of ints and calculates the modulus of the sum with the arraySize, or for the purposes of project 4, 512. It is useful because it calculates part of the result for the hashing function.
+
+SecondHash() is a helper function for calcHash(). It takes a sum of ints, divides that sum by 512, then calculates the modulus of the result with 512. It is useful because it calculates part of the result for the hashing function.
+
+LookUp() finds the index and number of hashing steps it took to find the index for a country with the given countryCode. It does this by repeatedly calculating new hashes until it either finds an empty index that wasn't previously filled, or the target country. If it finds the target country, it prints the index and the number of hashing steps, otherwise, it prints failure. This is useful because it helps with locating a given country in the hashtable.
+
+FindCountry() finds the index for a country with the given countryCode. Like lookUp(), it continuously calculates new hash indexes until it either finds an empty index that wasn't previously filled, or the target country. If it finds the country, it returns the index, otherwise, it retuns -1. This is useful because it both finds the country's index in the hashtable and also returns a value that can be used to check if the country is in the hashtable or not, which is an important check for many later HashTable functions. 
+
+InsertToHash() inserts a given singleCountryTimeSeries into the hashTable if the country for the singleCountryTimeSeries isn't already in the hashtable. It repeatedly calculates new hash indexes until it finds an empty index, and then puts the singleCountryTimeSeries into that index. This is useful because it allows you to add new values into the hashtable after creating it. 
+
+DeleteFromHash() deletes the country with the given countryCode from the hashtable. It repeatedly calculates hash indexes until it either finds an empty index that wasn't previously filled, or the target country. If it finds the country, it calls delete on the index and then sets the value at that index to nullptr to ensure no memory leaks. If it doesn't find the country, it prints failure and returns. This function is useful if you want to delete a country from the hashtable, but only know its countryCode. 
+
+DeleteIndex() deletes whatever value is in the given index of the hashtable. When used in conjunction with findCountry(), it is capable to deleting values just like deleteFromHash, but faster. This is useful because it allows you to delete unwanted objects from the hashtable. 
+
+GetNumVal() and getArraySize() are both getters for their respective member variables. They are useful if you ever want access to the member variables from outside the class. 
+
+operator[] is an operator overload that lets you access obejcts from the hashtable as if it were an array. This is useful because it simplifies access to hashtable elements when used outside the class itself, reducing more messiness. 
+-----
+-----
+The CountryTimeSeriesArray class for project 4 has been modified to be mainly used to store a HashTable of SingleCountryTimeSeries object pointers. This allows me to store SingleCountryTimeSeries for each country in a given csv file. The class also stores a pointer to a BTree, which is my custom binary tree class, as well as a int to keep track of the number of countries in my array of SingleCountryTimeSeries object pointers, since I initialize the array to size 512 instead of using a resizing array.
+
+The constructor simply initializes the member variables to default values. These values are later changed in functions and are only initialized in order to avoid memory errors due to using uninitialized values. 
+
+The destructor goes through the member array and calls the destructor of each SingleCountryTimeSeries object, ensuring that there are no memory issues. It is useful to enure no memory leaks. 
+
+RunCountryCommands() takes in user input to run the functions as listed on the project design document. It is necessary for the functioning of the program.
+
+LoadAllCountries() creates a singleCountryTimeSeries object for each unique country in the given csv file. It uses singleCountryTimeSeries's class's load() function in order to do so, since the singleCountryTimeSeries's class's load is well-tested and guaranteed to no throw errors. It then uses the HashTable class's insert function to insert the new singleCountryTimeSeries pointer to the correctly hashed index based on its countryCode. 
+
+ListCountryTimeSeries() takes a country name as input and lists all of its series codes. It is useful if the user wants to see what series codes are contained within a country. 
+
+FindRange() finds the largest mean for a given series code and the smallest mean of that same given series code. It is useful to check what the maximum and minimum means of a series code are. 
+
+BuildTree() builds a BTree object with means for a given series code. It finds all singleCountryTimeSeries objects that contain the given series code and puts their countryName and mean into two arrays, which are then used by BTree's constructor to create a new BTree. This function is crucial because many functions from project 3 require the use of a tree.
+
+FindMean() finds a given mean in the BTree that satisfy the given operation, as specified in the project 3 design document. It traverses the tree until it reaches a node where all nodes that are guaranteed to not satisfy the condition are not present. This is useful to quickly find a list of countries with a specific range of means for research or otherwise. It uses FindOperation(), a BTree class method, to do this. 
+
+DeleteCountry() deletes a country from a tree. It does this in a "lazy" way by simply switching the value to be deleted with the last valid value, and then reducing the range of the max index of the array by 1. Because we only ever delete nodes after the initial BuildTree, this makes array deletion quick. Once the array max index is zero, the node is treated as empty and is deleted. It does this by calling DeleteCountryFromTree(), which is a BTree method. 
+
+FindLimits() finds the lists of countries that contain the greatest or smallest means in the tree. It does this by finding either the leftmost or rightmost node in the tree depending on the condition, and returns all countrynames in that node. It is useful to check for the names of the countries with the smallest and largest means. It does this by calling findLims(), a BTree method. 
+
+LookUpInTable() calls the HashTable class's lookUp() function to find the index of the country with the given countryCode, prints that index, and also prints the number of hashing steps it took. If the country is not found, then it prints failure and returns. This is useful because it allows you to find the index and number of hashing steps from outside the HashTable class. 
+
+RemoveFromTable() removes the country with the given countryCode from both the tree, if built, and the hashtable, assuming the country is within the hashtable. It does by first using the HashTable class's findCountry() function to both check if the country is in the hashtable, and to find the index of the target country if it is in the hashtable. If the country is not found, then the function prints failure and immediate returns. It then uses this index to get the countryName, so that it may call the BTree class's deleteCountry() function to delete the country from the tree. Lastly, it uses the index to delete the country from the hashtable by calling the HashTable class's deleteIndex() function. Since we already checked that the country is in the hashtable, we can simply print success at the end once both deletions are complete. It is useful in case you want to delete something from both the tree and the hashtable. 
+
+InsertIntoTable() creates a new singleCountryTimeSeries from a given countryCode and filename, and then inserts it into the hashtable. It does this by using code similar to the LOAD() function. It opens the given file, goes through the file line by line until it finds the target countryCode. If it reaches the end of the file without finding the target countryCode, it prints failure and returns. If it does find the target country, it resets the file reader so that we read from the beginning again, and then calls the singleCountryTimeSeries class's load() function to create a singleCountryTimeSeries object. It then uses the HashTable class's insertToHash() function to calculate a correct hash index and places the new singleCountryTimeSeries object into that index of the hashtable. This is useful if you want to insert a specific country from a specific file into the hashtable, rather than inserting all countries in a given file like LOAD() does. 
+
+PrintTree() is used to print out the countryNames and means of nodes in the tree with in-order tree traversal. It is useful for checking if the tree has been built correctly, and is otherwise not used for the functioning of methods used in project 3. 
+
+PrintHashTable() is used to print out the countryNames and indexes of the countries in the hashtable. It does this by linearly iterating through the entire hashtable and only printing when the value isn't nullptr. It is useful to check if I've created my hashtable correctly, and is otherwise not used for the functioning methods used in projec 4. 
+-----
+-----
+Main simply instantiates a singleCountryTimeSeries object and then calls RunCountryCommands to set up the user input functionality. 
+
+
+ALTERNATIVES AND JUSTIFICATION
+
+One choice I made was to use helper functions for my hashing function in the HashTable class. It could've instead does all the calculations in a simple function, however, I found that using helper functions was much cleaner.  
+
+Another choice I made was to make my functions do most of their work inside the HashTable class itself, instead of countryTimeSeriesArray. This is because I wanted to avoid sending information between classes as much as possible, to limit the chances for errors to occur. Moreover, working in the HashTable class gave me easy ways to access and modify the values in the hashtable array, which is much more efficient than doing so outside the class. 
+
+Another choice I made was to use my old singleCountryTimeSeries LOAD inside my countryTimeSeriesArray LOAD. I did this because I knew that my singleCountryTimeSeries LOAD is reliable due to it passing project 3, so using it would reduce the chances I make an error.  
+
+
+RUNTIME ANALYSIS
+
+The average-case runtime of my LOOKUP() function is constant big-O O(1) where N is the number of countries in my hashtable because on average I would only have to calculate the hash index a constant amount of times before find the target country. This is because my code works by calculating hash indexes until I find either the target country or an empty hashtable index. In the average case, where we assume that there are constant big-O O(1) collisions, it means that I will only ever need to rehash O(1) times which takes O(1) time. The hash calculation itself is a series of multiplications and additions that don't change regardless of the number of countries in the hashtable, and thus also takes constant big-O O(1) time. Therefore, I am doing constant O(1) work a constant big-O O(1) times, which would be big-O O(1*1) time which still evaluates to constant big-O O(1) time. Thus, the average-case runtime of my LOOKUP() function is constant time O(1) multiplied by constant time O(1) which results in constant big-O time O(1).
+
+The worst-case runtime of my LOOKUP() function is linear big-O of O(N) where N is the number of countries in my hashtable because I would have to rehash N times due to having N collisions. This is because my code works by calculating hash indexes until I find either the target country or an empty hashtable index. In the worst case, the first hash indexes of all my countries would be the same. This means that the first country requires 1 hash step, the second country would need 2 hash steps due to the collision with the first country, and the Nth country would need N hash steps because it collides with every single country before it in the hashtable. In the worse-case, the user will call LOOKUP() looking for the Nth country or a country not in the hashtable, which would need N total hash calculations, and thus requires linear big-O O(N) time to reach the country. Each hash calculation requires a series of multplications and additions that don't change regardless of the number of countries in the hashtable, and thus takes constant big-O O(1) time. Therefore, I am doing constant O(1) work a linear big-O O(N) times, which would be big-O O(1*N) time which evaluates to linear big-O O(N) time. Thus, the worst-case runtime of my LOOKUP() function is linear time O(1) multiplied by linear time O(N) which results in linear big-O time O(N).
