@@ -1,0 +1,1 @@
+all: singleCountryTimeSeries.cpp bTreeNode.cpp timeSeries.cpp countryTimeSeriesArray.cpp bTree.cpp main.cpp hashTable.cpp  ; g++ -g -std=c++17 singleCountryTimeSeries.cpp bTreeNode.cpp timeSeries.cpp countryTimeSeriesArray.cpp bTree.cpp main.cpp hashTable.cpp 

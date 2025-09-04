@@ -1,0 +1,67 @@
+CLASS DESIGN
+
+BTree, BTreeNode, resizingArray, timeSeries, and HashTable were unchanged for project 5, and are thus still the same as project 4. 
+-----
+-----
+The CountryTimeSeriesArray class for project 5 has been modified to now store an adjacency list, which is composed of a map to a map to a vector of tuples. This allows me to find relationships between the means of the timeseries for each country in my list of data. 
+
+The constructor simply initializes the member variables to default values. These values are later changed in functions and are only initialized in order to avoid memory errors due to using uninitialized values. 
+
+The destructor goes through the member array and calls the destructor of each SingleCountryTimeSeries object, ensuring that there are no memory issues. It is useful to enure no memory leaks. 
+
+RunCountryCommands() takes in user input to run the functions as listed on the project design document. It is necessary for the functioning of the program.
+
+LoadAllCountries() creates a singleCountryTimeSeries object for each unique country in the given csv file. It uses singleCountryTimeSeries's class's load() function in order to do so, since the singleCountryTimeSeries's class's load is well-tested and guaranteed to no throw errors. It then uses the HashTable class's insert function to insert the new singleCountryTimeSeries pointer to the correctly hashed index based on its countryCode. In project 5, it also initializes two other data structures, one std::unordered_map and one array. The unordered_map is used to map countryNames to countryCodes, so that I have the ability to convert between the two. The array is used to store each country's country code, so that I can quickly and efficiently list out each country code in my data list. 
+
+InitializeGraph() fills the map to map to vector of tuples with all the countryCodes. For the outermost map, this function loops through the countryCodeArray and sets the each countryCode as a key to a inner empty map. This way, all countryCodes are placed in the outer map, and act as "source nodes" with no edges to other nodes. 
+
+UpdateEdges() creates edges between nodes that satisfy the given relationship from the parameters. It does this by taken advantage of the BTree class's findOperation() function, which finds all nodes that have means for the given seriesCode that satisfy the operation. Once all target nodes are found, they are return from the Btree class as a vector of countryCodes. Since all nodes in the return vector satisfy the relationship, they must all be connected by edges, and so each countryCode in the return vector is added to the inner map of each source node from the return vector. At the end, all nodes from the returned vector will be connected to all other nodes from the returned vector. This function is useful because without it our graph would have no edges. 
+
+isTupleInVec() checks if a given tuple is already found in the vector inside the inner map. It does this by comparing each value in the tuple to each value of each tuple in the vector. If the same three values are found, returns true, otherwise returns false. This is useful because when using updateEdges, it filters out any duplicate relationships. 
+
+PrintAdjacent() prints out all countryCodes that have a direct edge to the given countryCode, given that the countryCode exists in the graph. It does this by printing out each countryCode in the inner map of the given countryCode. It is useful to see what the direct neighbours of each node are. 
+
+IsPathExist() checks if two nodes are connected in a graph. It does this by implementing a depth first search. If the target node is found, returns true, otherwise removes the current countryCode from the queue, places all the removed nodes neighbours into the queue, and marks the removed node as traveled. Once the queue is empty, we know that we haven't found the target node so it returns false. This is useful to check how connected the relationships in the world's means are. 
+
+PrintRelationships() prints out all the relationship tuples of a given countryCode. It does this by printing out each tuple in the vector in the inner map of a given source node. This is useful to find what relationships the current countryCode node holds. 
+
+ListCountryTimeSeries() takes a country name as input and lists all of its series codes. It is useful if the user wants to see what series codes are contained within a country. 
+
+FindRange() finds the largest mean for a given series code and the smallest mean of that same given series code. It is useful to check what the maximum and minimum means of a series code are. 
+
+BuildTree() builds a BTree object with means for a given series code. It finds all singleCountryTimeSeries objects that contain the given series code and puts their countryName and mean into two arrays, which are then used by BTree's constructor to create a new BTree. This function is crucial because many functions from project 3 require the use of a tree.
+
+FindMean() finds a given mean in the BTree that satisfy the given operation, as specified in the project 3 design document. It traverses the tree until it reaches a node where all nodes that are guaranteed to not satisfy the condition are not present. This is useful to quickly find a list of countries with a specific range of means for research or otherwise. It uses FindOperation(), a BTree class method, to do this. 
+
+DeleteCountry() deletes a country from a tree. It does this in a "lazy" way by simply switching the value to be deleted with the last valid value, and then reducing the range of the max index of the array by 1. Because we only ever delete nodes after the initial BuildTree, this makes array deletion quick. Once the array max index is zero, the node is treated as empty and is deleted. It does this by calling DeleteCountryFromTree(), which is a BTree method. 
+
+FindLimits() finds the lists of countries that contain the greatest or smallest means in the tree. It does this by finding either the leftmost or rightmost node in the tree depending on the condition, and returns all countrynames in that node. It is useful to check for the names of the countries with the smallest and largest means. It does this by calling findLims(), a BTree method. 
+
+LookUpInTable() calls the HashTable class's lookUp() function to find the index of the country with the given countryCode, prints that index, and also prints the number of hashing steps it took. If the country is not found, then it prints failure and returns. This is useful because it allows you to find the index and number of hashing steps from outside the HashTable class. 
+
+RemoveFromTable() removes the country with the given countryCode from both the tree, if built, and the hashtable, assuming the country is within the hashtable. It does by first using the HashTable class's findCountry() function to both check if the country is in the hashtable, and to find the index of the target country if it is in the hashtable. If the country is not found, then the function prints failure and immediate returns. It then uses this index to get the countryName, so that it may call the BTree class's deleteCountry() function to delete the country from the tree. Lastly, it uses the index to delete the country from the hashtable by calling the HashTable class's deleteIndex() function. Since we already checked that the country is in the hashtable, we can simply print success at the end once both deletions are complete. It is useful in case you want to delete something from both the tree and the hashtable. 
+
+InsertIntoTable() creates a new singleCountryTimeSeries from a given countryCode and filename, and then inserts it into the hashtable. It does this by using code similar to the LOAD() function. It opens the given file, goes through the file line by line until it finds the target countryCode. If it reaches the end of the file without finding the target countryCode, it prints failure and returns. If it does find the target country, it resets the file reader so that we read from the beginning again, and then calls the singleCountryTimeSeries class's load() function to create a singleCountryTimeSeries object. It then uses the HashTable class's insertToHash() function to calculate a correct hash index and places the new singleCountryTimeSeries object into that index of the hashtable. This is useful if you want to insert a specific country from a specific file into the hashtable, rather than inserting all countries in a given file like LOAD() does. 
+
+PrintTree() is used to print out the countryNames and means of nodes in the tree with in-order tree traversal. It is useful for checking if the tree has been built correctly, and is otherwise not used for the functioning of methods used in project 3. 
+
+PrintHashTable() is used to print out the countryNames and indexes of the countries in the hashtable. It does this by linearly iterating through the entire hashtable and only printing when the value isn't nullptr. It is useful to check if I've created my hashtable correctly, and is otherwise not used for the functioning methods used in projec 4. 
+-----
+-----
+Main simply instantiates a singleCountryTimeSeries object and then calls RunCountryCommands to set up the user input functionality. 
+
+
+ALTERNATIVES AND JUSTIFICATION
+
+One choice I made was to use std::unordered_map, std::vector, and std::set from the standard library instead of creating my own custom classes. I choose to use the classes from the standard library because they minimize the amount of memory leaks and other errors. Custom classes are used to create functions that are not found in the standard library class because they are more flexible, however, all the functionalities I need were found in the standard library classes, so there was no reason to go through the effort and time to create my own custom classes. 
+
+Another choice I made was to use my old Btree class functions to find the target nodes for updateEdges() instead of creating a new function to do so. I did this because using the tree makes find the necessary information a faster process than linearly searching. Moreover, the function is guaranteed to be correct due to it passing previous projects, so it's reliable. Using my old BTree class functions are both reliable and require less time than creating a new functions, that's why I decided to use my old Btree class functions instead of making a enw one to find the target nodes for updateEdges. 
+
+Another choice I made was to use an adjacency list to store my graph instead of an adjacency matrix. I did this because adjacency lists are more efficient than adjacency matrices. 
+
+Another choice I made was to use DFS instead of BFS for isPathExist(). I used DFS because I expect that many countries will be connected by relationships since the relationships are typically very broad. Thus, it's likely that two nodes are connected in fewer edges rather than more. As such, I believe that DFS will typically find a path faster than BFS. That's why I used DFS instead of BFS
+
+
+RUNTIME ANALYSIS
+
+The worst-case runtime of my ADJACENT() function is linear big-O of O(N) where N is the number of countries in the graph because I would have to print out all N countries in the graph. This is because my code works by finding the countryCode given in the parameters using a hashing function, and then prints out all the keys of the inner map. In the worst case, the countryCode given in the parameters would be adjacent to every other node in the graph, and so I would need to print out N countries. Finding the countryCode given in the parameters takes constant big-O O(1) time, because of the hashing function and because I am implementing the hashmap using an unordered_list. Iterating through and printing all N adjacent countries takes linear big-O O(N) time because I need to find keys N times, which takes O(1) time for each key. Therefore, I am doing constant O(1) work and then linear big-O O(N) work, which would be big-O O(1 + N) time which evaluates to linear big-O O(N) time. Thus, the worst-case runtime of my ADJACENT() function is constant time O(1) plus linear time O(N) which results in linear big-O time O(N).
