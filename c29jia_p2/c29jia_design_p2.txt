@@ -1,0 +1,151 @@
+CLASS DESIGN
+
+The classes implemented were the resizingArray class, the timeSeries class, and the singleCountryTimeSeries class, as well as a main class to set off the above three classes.
+
+ResizingArray mimics the standard library vector class, functioning as a resizeable array. It is implemented as a
+template so that I could make resizeable arrays of different datatypes since all of them would use similar functions. 
+This is useful because I decided to store year and data values in arrays due to easy access to the middle of the dataset, 
+which helps with accessing specific years. This class has four member variables: one to store the number of values in the 
+array, one to store the maximum capacity of the array, one to store the number of "valid" values, and one to store the 
+dynamic array. The reason there's a number of values is to keep track of the number of values actually filling the capacity
+of the array. The capacity is to keep track of the maximum number of values allowed in the array so that it knows when it needs
+to resize. The numValidValues is used as for the purposes of project 1 I use the resizeAble array to store invalid data, so 
+it is useful to keep track of non-invalid data for certain functions mentioned later in the TimerSeries class. The array is 
+dynamically allocated because we want it to be resizeable, which means it doesn't use a set about of memory. 
+
+The following list explains the class methods. 
+
+A constructor is used to build the object and a destructor is used to free the memory allocated to the dynamically allocated 
+array in the class. Used to ensure no memory leaks. 
+
+Print prints all values in the array. It is used mainly for testing purposes, although it still functions as a way to visualize
+all the values in the array if that is necessary.
+
+AppendVal appends the given value to the end of the array. This is used to quickly insert elements into the array as by using 
+the numValues member variable, it can insert values in O(1) time. 
+
+InsertVal inserts a given value into a given index of the array. Like append, this is used to insert elements into the array.
+However, it is more flexible as you can insert the value in any valid index, though at the cost of being O(N) time. 
+
+DeleteVal deletes a value at a given index of the array. It does this by copying all values, except the value to be deleted, in the old array to a new array. It also calls the destructor on the value deleted in case the value was dynamically allocated. This method also calls halveCapacity() if the deleteVal caused the number of values to go below the threshold of one quarter of the total capacity. This is a key functionality of the resizingArray class and it crucial to completing project 2. 
+
+EmptyArray empties the array. It is used to quickly reset the array when LOAD is called multiple times in a single run. It is useful because it allows for efficient array resetting without having to call the destructor. 
+
+DoubleCapacity doubles the capacity of the array by creating a new array of double capacity, copying all values in the old array
+to the new array, and then deleting the old array. This function is is called by appendVal and insertVal when they want to add a 
+value but have reached capacity. This function is core to the resizing ability of the ResizingArray.
+
+HalveCapaity halves the capacity of the array by creating a new array of half capacity, copying all values in the old array to the
+new array, and then deleting the old array. This function is called by deleteVal when the delete results in the number of values in
+array being equal to or less than a quarter of it's capacity. This function is core to the resizing ability of the ResizingArray.
+
+IsFull checks if the array is at capacity. It is called to check if the program needs to double capacity. 
+
+IsQuartered checks if the array contains a number of values that is equal to a quarter of the capacity. It is not used in this project
+but it is called to check if the program to halve capacity. 
+
+IsEmpty checks if the array no longer contains values. It is useful when I need to check if the array is empty for corner cases. 
+
+IsEmptyValid checks if the array contains no valid values (values >= 0). It is useful when I need to check if the array contains
+no valid data for corner cases. 
+
+The following are simply getters that give access to the member variables: getNumValues, getCapacity, getNumValidValues, getArray
+
+IncrementNumValidValues increments (+1) numValidValues. Used because sometimes the number of valid values increases without using
+the insertVal or appendVal functions (e.g. changing an invalid value to a valid value, like with the "udpate" function in the 
+TimerSeries class)
+
+Likewise DecrementNumValidValues decrements (-1) numValidValues. Used for the same reasons as incrementNumValidValues but used during deleteVal() calls and array resetting for emptyPointerArray(). Useful because otherwise I couldn't decrement the numValidValues outside the class, and would have to do difficult comparisons using operator overloading. 
+
+IncrementValidValues/decrementValidValues do the same things as IncrementNumValidValues/DecrementNumValidValues, but increment/decrement numValues instead of numValidValues. 
+
+ZeroNumValues/ZeroNumValidValues sets numValues/numValidValues to zero respectively. Useful when I need to quickly reset numValues and numValidValues from outside the class. 
+
+EmptyPointerArray is used to reset the array, but work specifically for pointer arrays. It deallocates and calls the destructors of each individual pointer (to an object) to prevent memory leaks. 
+
+Finally the operator overload is used to enable easy and familar access to the ResizeableArray, just like a normal array. 
+
+-----
+-----
+The TimeSeries class implements all functions given in the project 1 PDF. 
+
+The member variables are used to store the csv file seriesName, seriesCode, two ResizeableArrays for year and data storage, and two
+doubles for the best fit slope and y-intercept for easy access to these values from the rest of the class. seriesName and seriesCode
+is information that is not used for this lab, but will likely be used in the future. The resizeAble arrays are used because users can
+add or delete (though not in project 1) values, thus needing them to be resizeable. 
+
+A constructor and destructor are used to initialize and delete the TimeSeries object without leaking memory. 
+
+Load loads a given file and places all year and data values into the class arrays. It also initializes the other member variables. 
+
+Print prints all year data pairs in the form (y, d). If there is no valid data pairs to print, output failure. 
+
+Add adds a new year data pair to their respective ResizeableArrays, but only if the given year does not yet have valid data. It calls
+insertVal if the year given is not year in the year list, otherwise it simply changes the value of the year from -1 to the given data
+value. It outputs success if the insert is completed and failure if it's not. 
+
+Update updates a year with existing valid data to a given data value. It outputs success if the data value was changed and failure
+if there was no valid data in that year. 
+
+Mean calculates the mathmatical average of the valid data in the TimeSeries. It does this by summing valid data and then dividing it
+by the number of valid year data pairs in the TimeSeries. 
+
+Is_Monotonic checks if the TimeSeries' data is monotonic (never decreasing or never increasing). It has three special cases due to 
+needing to compare two indexes, which cannot be done when the number of values is less than 2, and is not necessary when the number
+of values is less than 3 (since a system of 2 points will always be monotonic). 
+
+Best_Fit implements a complicated best fit formula which calculates the slope and y-intercept of the line fo best fit for the data of
+TimeSeries. It calculates each individual path of the equation first by iterating through the array and doing the correct mathematical
+increments, then it substitutes the values into the best fit formula. It outputs success if a slope and y-intercept were found, and 
+failure if there were no valid data to find the line of best fit. 
+
+The following 6 methods are simply getters for the member variables: getSeriesName, getSeriesCode, getYearList, getDataList, getM, getB
+
+The following 2 methods were used for testing purposes to print out the dataList and yearList: printDataList, printYearList
+
+-----
+-----
+The singleCountryTimeSeries class uses the timeSeries class to implement all functions in the project 2 PDF. 
+
+SingleCountryTimeSeries has an h file with member variables and function declarations, while the function definitions are in the cpp file. 
+
+The contructor initializes the country name and country to empty strings for checks in the load. The destructor destroys each item in the array as the array contains pointers to objects. If the destructor did not destroy each item individually but instead the array itself, then there would be massive memory errors/leaks. 
+
+RunCountryCommands is a while loop that takes user input and uses that to run all other class methods. It is used to that user input
+can be converted to function calls. 
+
+LoadCountrySeries loads all time series for a specific given country. It loads a single line from the file, then uses the old timeSeries class' load to load each item in that single line into a timeseries. It is used to put all desired data into the member array.
+
+List lists the country name and country code, then loads the series codes of all that country's time series. It is used to check what time series are in the country's list of time series. 
+
+Add adds a data point to a previously invalid year in a specific given time series. It is useful when you need to add new data to a time series. It uses a loop to find the specific given series code, then uses the time series class' add function to do the adding step.
+
+Update updates a data point to a year that already has valid data in a specific given time series. It is useful when you need to update old data in a time series. It uses a loop to find the specific given series code, then uses the time series class' update function to do the updating step.
+
+Print prints a given time series year and data. It is useful when you need to see the data points in a time series. It uses a loop to find the specific given series code, then uses the time series class' print function to do the adding step.
+
+DeleteSeries deletes a given time series from the singleCountryTimeSeries' array. It is useful in cause you want to delete a time series for some reason. It uses a loop to find the correct time series, then calls the ResizingArray class' delete function to delete the time series from the array.
+
+BiggestMean finds the time series with the biggest mean in the singleCountryTimeSeries's array. It then outputs the series code of the time series with the biggest mean, and also returns it in case the data is needed for future projects. 
+
+Te following three functions are simply used to access the member variable information from outside the singleCountryTimeSeries class: getCountryName(), getCountryCode(), getArr()
+
+-----
+-----
+Main simply instantiates a singleCountryTimeSeries object and then calls RunCountryCommands to set up the user input functionality. 
+
+
+ALTERNATIVES AND JUSTIFICATION
+
+One choice I made was to use my custom ResizingArray class to store all the time series instead of creating a new linkedList class. I chose this because despite it not being very relevant for the functions implemented in project 2, I greatly value the ability to have quick access to specific values at specific indexes. Moreover, my ResizingArray is already implmented as a template, so it was versatile/general enough for the purposes of project 2 and allowed me to reuse old code. 
+
+The downside of using my old ResizingArray class is that I needed to update the class such that it was one hundred percent compatible with its data type being pointers to objects. I spent a lot of time debugging since I did not need to think about calling destructors on individual items in the array for project 1. However, it caused memory leaks in project two, which used quite a bit of time to fix. 
+
+I also decided to create a function to increment numValidValues and numValues, which are member variables to my resizingArray class, because my old implmentation from project 1 needed to compare inserted values to 0, and it's not possible to compare pointers to objects and doubles or ints. I decided not to use an inherited class or operator overloading because I thought that use an incrementation function would be simplest and least prone to error. 
+
+
+RUNTIME ANALYSIS
+
+The worst-case runtime of my DELETE() function is linear big-O O(N+M) where N is the number of time series stored and M is the number of data points in that time series because I would have to iterate through my entire singleCountryTimeSeries array to find the index of the time series to be deleted, and then copy every time series from the old array to the new array, except for the time series to be deleted. This is because my code works by iterating through the entire array of times series to find the index of the target series code. In the worst case, the target series code would be at the end of the array, causing me to have to iterate N times, so finding the index is completed in linear time O(N). Every loop, I simply call a function to return the series code of the current time series, which runs in constant time O(1). Thus the total time for searching for the target series code is linear multiplied by constant, which results in linear time O(1). Then, I call delete, a function from the ResizingArray class. This function copies the entire array except for the value to be deleted into a new array. Since there are M items in the array, I will have to iterate over M items, so it is complete in linear time O(M). Each loop, I simply copy the value from the old array to the new array, so each loop takes constant time O(1). When I iterate until the time series to be deleted, I call the destructor on it, which also takes constant O(1) time, so each loop takes at most constant O(1) time. Since there are M loops, the total time it takes to delete an item after I've found the target series code is linear time multiplied by constant time, which results in linear time O(M). Since the searching step and deleting step occur one after another, the total time for my DELETE() function is simply the sum of their time complexities. Thus, the worst-case runtime of my DELETE() function is linear time O(N) plus linear time O(M) which results in linear big-O time O(N+M).
+
+The worst-case runtime of my ADD() function is linear big-O of O(N+M) where N is the number of time series stored and M is the number of data points in that time series because I would have to iterate through my entire singleCountryTimeSeries array to find the index of the time series to be added to, and then I would have to iterate through the entire array inside the target time series' dataList in order to find the year that I need to ADD a data point to. This is because my code works by iterating through the entire array of times series to find the index of the target series code. In the worst case, the target series code would be at the end of the array, causing me to have to iterate N times, so finding the index is completed in linear time O(N). Every loop, I simply call a function to return the series code of the current time series, which runs in constant time O(1). Thus the total time for searching for the target series code is linear multiplied by constant, which results in linear time O(1). The I call ADD(), which is a function from my timeSeries class, which then calls insert() function in my ResizingArray class. insert() works by copying the entire old array into a new array, but inserting the given value into a given index duringt hecopying stage. In the worst-case I will have to copy over M items, which means the loops complete in linear big-O O(M) time. Because each loop simply copies over a value from one array to another, and the inserting procedure is simply adding a new value into the array, all of these take constant time O(1). That means that the total time taken by the insert() function's loops is linear time multiplied by constant time which results in linear time O(M). Since the searching step and inserting step occur one after another, the total time for my ADD() function is simply the sum of their time complexities. Thus, the worst-case runtime of my ADD() function is linear time O(N) plus linear time O(M) which results in linear big-O time O(N+M).
