@@ -1,0 +1,220 @@
+CLASS DESIGN
+
+The classes implemented were the resizingArray class, the timeSeries class, and the singleCountryTimeSeries class, as well as a main class to set off the above three classes.
+
+ResizingArray mimics the standard library vector class, functioning as a resizeable array. It is implemented as a
+template so that I could make resizeable arrays of different datatypes since all of them would use similar functions. 
+This is useful because I decided to store year and data values in arrays due to easy access to the middle of the dataset, 
+which helps with accessing specific years. This class has four member variables: one to store the number of values in the 
+array, one to store the maximum capacity of the array, one to store the number of "valid" values, and one to store the 
+dynamic array. The reason there's a number of values is to keep track of the number of values actually filling the capacity
+of the array. The capacity is to keep track of the maximum number of values allowed in the array so that it knows when it needs
+to resize. The numValidValues is used as for the purposes of project 1 I use the resizeAble array to store invalid data, so 
+it is useful to keep track of non-invalid data for certain functions mentioned later in the TimerSeries class. The array is 
+dynamically allocated because we want it to be resizeable, which means it doesn't use a set about of memory. 
+
+The following list explains the class methods. 
+
+A constructor is used to build the object and a destructor is used to free the memory allocated to the dynamically allocated 
+array in the class. Used to ensure no memory leaks. 
+
+Print prints all values in the array. It is used mainly for testing purposes, although it still functions as a way to visualize
+all the values in the array if that is necessary.
+
+AppendVal appends the given value to the end of the array. This is used to quickly insert elements into the array as by using 
+the numValues member variable, it can insert values in O(1) time. 
+
+InsertVal inserts a given value into a given index of the array. Like append, this is used to insert elements into the array.
+However, it is more flexible as you can insert the value in any valid index, though at the cost of being O(N) time. 
+
+DeleteVal deletes a value at a given index of the array. It does this by copying all values, except the value to be deleted, in the old array to a new array. It also calls the destructor on the value deleted in case the value was dynamically allocated. This method also calls halveCapacity() if the deleteVal caused the number of values to go below the threshold of one quarter of the total capacity. This is a key functionality of the resizingArray class and it crucial to completing project 2. 
+
+EmptyArray empties the array. It is used to quickly reset the array when LOAD is called multiple times in a single run. It is useful because it allows for efficient array resetting without having to call the destructor. 
+
+DoubleCapacity doubles the capacity of the array by creating a new array of double capacity, copying all values in the old array
+to the new array, and then deleting the old array. This function is is called by appendVal and insertVal when they want to add a 
+value but have reached capacity. This function is core to the resizing ability of the ResizingArray.
+
+HalveCapaity halves the capacity of the array by creating a new array of half capacity, copying all values in the old array to the
+new array, and then deleting the old array. This function is called by deleteVal when the delete results in the number of values in
+array being equal to or less than a quarter of it's capacity. This function is core to the resizing ability of the ResizingArray.
+
+IsFull checks if the array is at capacity. It is called to check if the program needs to double capacity. 
+
+IsQuartered checks if the array contains a number of values that is equal to a quarter of the capacity. It is not used in this project
+but it is called to check if the program to halve capacity. 
+
+IsEmpty checks if the array no longer contains values. It is useful when I need to check if the array is empty for corner cases. 
+
+IsEmptyValid checks if the array contains no valid values (values >= 0). It is useful when I need to check if the array contains
+no valid data for corner cases. 
+
+The following are simply getters that give access to the member variables: getNumValues, getCapacity, getNumValidValues, getArray
+
+IncrementNumValidValues increments (+1) numValidValues. Used because sometimes the number of valid values increases without using
+the insertVal or appendVal functions (e.g. changing an invalid value to a valid value, like with the "udpate" function in the 
+TimerSeries class)
+
+Likewise DecrementNumValidValues decrements (-1) numValidValues. Used for the same reasons as incrementNumValidValues but used during deleteVal() calls and array resetting for emptyPointerArray(). Useful because otherwise I couldn't decrement the numValidValues outside the class, and would have to do difficult comparisons using operator overloading. 
+
+IncrementValidValues/decrementValidValues do the same things as IncrementNumValidValues/DecrementNumValidValues, but increment/decrement numValues instead of numValidValues. 
+
+ZeroNumValues/ZeroNumValidValues sets numValues/numValidValues to zero respectively. Useful when I need to quickly reset numValues and numValidValues from outside the class. 
+
+EmptyPointerArray is used to reset the array, but work specifically for pointer arrays. It deallocates and calls the destructors of each individual pointer (to an object) to prevent memory leaks. 
+
+Finally the operator overload is used to enable easy and familar access to the ResizeableArray, just like a normal array. 
+
+-----
+-----
+The TimeSeries class implements all functions given in the project 1 PDF. 
+
+The member variables are used to store the csv file seriesName, seriesCode, two ResizeableArrays for year and data storage, and two
+doubles for the best fit slope and y-intercept for easy access to these values from the rest of the class. seriesName and seriesCode
+is information that is not used for this lab, but will likely be used in the future. The resizeAble arrays are used because users can
+add or delete (though not in project 1) values, thus needing them to be resizeable. 
+
+A constructor and destructor are used to initialize and delete the TimeSeries object without leaking memory. 
+
+Load loads a given file and places all year and data values into the class arrays. It also initializes the other member variables. 
+
+Print prints all year data pairs in the form (y, d). If there is no valid data pairs to print, output failure. 
+
+Add adds a new year data pair to their respective ResizeableArrays, but only if the given year does not yet have valid data. It calls
+insertVal if the year given is not year in the year list, otherwise it simply changes the value of the year from -1 to the given data
+value. It outputs success if the insert is completed and failure if it's not. 
+
+Update updates a year with existing valid data to a given data value. It outputs success if the data value was changed and failure
+if there was no valid data in that year. 
+
+Mean calculates the mathmatical average of the valid data in the TimeSeries. It does this by summing valid data and then dividing it
+by the number of valid year data pairs in the TimeSeries. 
+
+Is_Monotonic checks if the TimeSeries' data is monotonic (never decreasing or never increasing). It has three special cases due to 
+needing to compare two indexes, which cannot be done when the number of values is less than 2, and is not necessary when the number
+of values is less than 3 (since a system of 2 points will always be monotonic). 
+
+Best_Fit implements a complicated best fit formula which calculates the slope and y-intercept of the line fo best fit for the data of
+TimeSeries. It calculates each individual path of the equation first by iterating through the array and doing the correct mathematical
+increments, then it substitutes the values into the best fit formula. It outputs success if a slope and y-intercept were found, and 
+failure if there were no valid data to find the line of best fit. 
+
+The following 6 methods are simply getters for the member variables: getSeriesName, getSeriesCode, getYearList, getDataList, getM, getB
+
+The following 2 methods were used for testing purposes to print out the dataList and yearList: printDataList, printYearList
+
+-----
+-----
+The singleCountryTimeSeries class uses the timeSeries class to implement all functions in the project 2 PDF. 
+
+SingleCountryTimeSeries has an h file with member variables and function declarations, while the function definitions are in the cpp file. 
+
+The contructor initializes the country name and country to empty strings for checks in the load. The destructor destroys each item in the array as the array contains pointers to objects. If the destructor did not destroy each item individually but instead the array itself, then there would be massive memory errors/leaks. 
+
+RunCountryCommands is a while loop that takes user input and uses that to run all other class methods. It is used to that user input
+can be converted to function calls. 
+
+LoadCountrySeries loads all time series for a specific given country. It loads a single line from the file, then uses the old timeSeries class' load to load each item in that single line into a timeseries. It is used to put all desired data into the member array.
+
+List lists the country name and country code, then loads the series codes of all that country's time series. It is used to check what time series are in the country's list of time series. 
+
+Add adds a data point to a previously invalid year in a specific given time series. It is useful when you need to add new data to a time series. It uses a loop to find the specific given series code, then uses the time series class' add function to do the adding step.
+
+Update updates a data point to a year that already has valid data in a specific given time series. It is useful when you need to update old data in a time series. It uses a loop to find the specific given series code, then uses the time series class' update function to do the updating step.
+
+Print prints a given time series year and data. It is useful when you need to see the data points in a time series. It uses a loop to find the specific given series code, then uses the time series class' print function to do the adding step.
+
+DeleteSeries deletes a given time series from the singleCountryTimeSeries' array. It is useful in cause you want to delete a time series for some reason. It uses a loop to find the correct time series, then calls the ResizingArray class' delete function to delete the time series from the array.
+
+BiggestMean finds the time series with the biggest mean in the singleCountryTimeSeries's array. It then outputs the series code of the time series with the biggest mean, and also returns it in case the data is needed for future projects. 
+
+Te following three functions are simply used to access the member variable information from outside the singleCountryTimeSeries class: getCountryName(), getCountryCode(), getArr()
+
+-----
+-----
+The CountryTimeSeriesArray class is mainly used to store an array of SingleCountryTimeSeries object pointers. This allows me to store SingleCountryTimeSeries for each country in a given csv file. The class also stores a pointer to a BTree, which is my custom binary tree class, as well as a int to keep track of the number of countries in my array of SingleCountryTimeSeries object pointers, since I initialize the array to size 512 instead of using a resizing array.
+
+The constructor simply initializes the member variables to default values. These values are later changed in functions and are only initialized in order to avoid memory errors due to using uninitialized values. 
+
+The destructor goes through the member array and calls the destructor of each SingleCountryTimeSeries object, ensuring that there are no memory issues. 
+
+RunCountryCommands() takes in user input to run the functions as listed on the project design document. It is necessary for the functioning of the program.
+
+LoadAllCountries() creates a singleCountryTimeSeries object for each unique country in the given csv file. It uses singleCountryTimeSeries's class's load() function in order to do so, since the singleCountryTimeSeries's class's load is well-tested and guaranteed to no throw errors. 
+
+ListCountryTimeSeries() takes a country name as input and lists all of its series codes. It is useful if the user wants to see what series codes are contained within a country. 
+
+FindRange() finds the largest mean for a given series code and the smallest mean of that same given series code. It is useful to check what the maximum and minimum means of a series code are. 
+
+BuildTree() builds a BTree object with means for a given series code. It finds all singleCountryTimeSeries objects that contain the given series code and puts their countryName and mean into two arrays, which are then used by BTree's constructor to create a new BTree. This function is crucial because many functions from project 3 require the use of a tree.
+
+FindMean() finds a given mean in the BTree that satisfy the given operation, as specified in the project 3 design document. It traverses the tree until it reaches a node where all nodes that are guaranteed to not satisfy the condition are not present. This is useful to quickly find a list of countries with a specific range of means for research or otherwise. It uses FindOperation(), a BTree class method, to do this. 
+
+DeleteCountry() deletes a country from a tree. It does this in a "lazy" way by simply switching the value to be deleted with the last valid value, and then reducing the range of the max index of the array by 1. Because we only ever delete nodes after the initial BuildTree, this makes array deletion quick. Once the array max index is zero, the node is treated as empty and is deleted. It does this by calling DeleteCountryFromTree(), which is a BTree method. 
+
+FindLimits() finds the lists of countries that contain the greatest or smallest means in the tree. It does this by finding either the leftmost or rightmost node in the tree depending on the condition, and returns all countrynames in that node. It is useful to check for the names of the countries with the smallest and largest means. It does this by calling findLims(), a BTree method. 
+
+CalcMiddleMean() is an unused function that was previously used to calculate the midpoint of a node by finding the average between the highest mean and the lowest mean of a node. However, this job has since been taken over by the BTreeNode class, so this function is simply here in case it is useful in the future. 
+
+PrintTree() is used to print on the countryNames and means of nodes in the tree with in-order tree traversal. It is useful for checking if the tree has been built correctly, and is otherwise not used for the functioning of methods used in project 3. 
+-----
+-----
+The BTree class is a binary tree class. It holds a pointer to a node, called the root, as well as a seriesCode. The class also holds two arrays to store the countryNames and means of all countries with a timeseries corresponding to the series code it holds. This class is crucial because many project 3 methods require a binary tree. The BTree class also contains the number of countries that is stored in its member arrays, since otherwise it would be difficult to traverse the arrays due to index out of bounds errors. 
+
+The constructor initializes all values in the member arrays to default values, then copies the array parameter values into its member arrays, and finally constructs a root from this information. It then calls the BuildTree function to build the rest of the nodes in the tree.
+
+The destructor calls destroyRecursive() to delete and deallocate all nodes. This ensures that there are no memory errors (such as memory leaks).
+
+DestroyRecursive() uses post-order traversal to deallocate all nodes in the tree and the root. It is called in the destructor. 
+
+BuildTree() uses a given node to construct its children. It does not create children if the given node is a nullptr, only contains 1 countryName, or whose means are all equal (equal is defined as the difference being less than 0.001). Otherwise, it uses the given node's midMean to copy values into one of two arrays, depending on if the mean of a country is larger or smaller than the midMean. It then uses these arrays to construct nodes and sets them as the children of the given node. 
+
+FindOperation is how FindMean in the CountryTimeSeriesArray class functions. It finds and prints the names of all countries that have a mean that satisfy the operation. It is useful because this function is necessary for project 3. 
+
+DeleteCountryFromTree deletes all mentions of a given countryName from all nodes in the BTree. The intention is that if all country names have been deleted from a node, that node is also deleted from the tree. This implements DeleteCountries() from the CountryTimeSeriesArray class. 
+
+FindLims() finds and prints out all countries with the smallest or the biggest means in the tree. It does this by finding the leftmost or rightmost node in the tree and prints out all the countryNames in those nodes. This implements findLimits from the CountryTimeSeriesArray class. It uses printStrArr(), a BTreeNode method, to print the countryNames. 
+
+GetRoot() simply returns the root. It is useful if I want access to the member variables from outside the class. 
+
+PrintTreeStart() and PrintTree() are methods that I use to print out all nodes in the tree. It is useful to check if I have created my tree properly. 
+-----
+-----
+The BTreeNode class is a class to create nodes for the Btree class. It contains pointers to two children nodes, which are initialized to nullptr. It also contains a highMean and lowMean, which are used to check if all means in the node are equal to each other. It also contains a midMean, which takes the place of a nodes "data", and it used to determine which country names go into which children of the node. It also contains one array of strings to hold country names and one array of doubles to hold their corresponding means. The last member variable is numVal, which holds the number of values in the arrays so that I was traverse through them more easily. 
+
+The constructor initializes all member variables to default values, then calculates the midMean by finding the lowMean and highMean from the given arrays. It also copies the given arrays.
+
+The destructor resets left and right to nullptrs to ensure that I don't have any dangling pointers. 
+
+PrintTargetMean() finds all countries in the node that have means equal, less than, or greater than the given mean, depending on the operation. It implements the findMean function in CountryTimeSeriesArray. 
+
+DeleteCountry() is used to "lazy" delete a countryname and its mean from the node. It implements the deleteCountry() method from CountryTimeSeriesArray. 
+
+GetStrArr(), getDblArr(), getNumVal(), getMidMean(), getLowMean(), getHighMean(), getLeft(), getRight() are getters for their respective member variables, so that the variables can also be used outside the class. 
+
+setLeft() and setRight() are used to set the left child and right child of the node from outside the class. They are useful because 
+
+PrintNode() prints out the countriesNames in the node's array. It is used primarily for testing purposes to make sure that the tree was constructed properly. 
+
+PrintStrArr() prints all countryNames in the node. It is used in findLimits() to efficiently print out all the countryNames found in the leftmost or rightmost nodes. 
+
+IsAllEqual() checks if the means of all countries in the node are equal (with a margin of 0.001), and returns true if they are, false otherwise. 
+-----
+-----
+Main simply instantiates a singleCountryTimeSeries object and then calls RunCountryCommands to set up the user input functionality. 
+
+
+ALTERNATIVES AND JUSTIFICATION
+
+One choice I made was to used static arrays instead of dynamic arrays. I did this because it was extremely tedious and difficult to keep track of all the pointers between classes. Static arrays ensured that I would have much fewer places with pointer errors. If I was more experienced with pointers, then pointers would be more efficient, however in this case, I decided that at my level of experience, using static arrays is the better choice. 
+
+Another choice I made was to make my functions do most of their work inside BTree and BTreeNode themselves, instead of countryTimeSeriesArray. This is again because I wanted to avoid sending information between classes as much as possible, to limit the chances for errors to occur. 
+
+Another choice I made was to use my old singleCountryTimeSeries LOAD inside my countryTimeSeriesArray LOAD. I did this because I knew that my singleCountryTimeSeries LOAD is reliable due to it passing project 2, so using it would reduce the chances I make an error.  
+
+
+RUNTIME ANALYSIS
+
+The best-case runtime of my LIMITS() function is logarithmic big-O O(log(N)) where N is the number of nodes in my BTree because I would have to iterate through my entire tree until I reach a the leftmost or rightmost leaf node, and then print out all the nodes there. This is because my code works by traversing the BTree until I reach a the leftmost or rightmost leaf node. In the best case, the tree would be a complete tree, because that way I would only have to traverse through log(N) nodes, making traversal logarithmic big-O O(log(N)) time. Once I reach the target leaf node, I would need to print out all the countries stored within the array of the leaf node. In the best case, there would only be a single country in the node's array, because the country's mean would be larger or smaller than any other in the tree, which leads to the printing process to being constant big-o O(1) time, and then I would be done. Since the traversal takes O(log(N)) logarithmic time and the printing takes O(1) constant time, the traversal logarithmic time dominates and the total process takes big-o logarithmic O(log(N)) time. Thus, the best-case runtime of my LIMITS() function is logarithmic time O(log(N)) plus constant time O(1) which results in logarithmic big-O time O(log(N)).
+
+The worst-case runtime of my LIMITS() function is linear big-O of O(N) where N is the number of nodes in my BTree because I would have to traverse every single node in the tree. This is because my code works by traversing through the tree until I find the rightmost or leftmost leaf node depending on the given operation. In the worst case, the means of the countries in the BTree will be values that cause the BTree to become something that is like a degenerated tree. In a degenrated tree, I would need to iterate through all N nodes until I reach the leaf node, which takes linear big-0 O(N) time. Once I reach the leaf node, I would need to print out the mean of eveyr country in that node. Because the worst case is a degenerated tree, the leaf node will only every contain 1 countryName, so the printing process would take constant big-o O(1) time. That means that the total time taken by the LIMITS() function is linear big-O O(N) time plus constant big-O (1) time, and since the linear O(N) time dominates the constant O(1) time, the total time becomes big-O O(N) time, where N is the number of nodes in the tree. Thus, the worst-case runtime of my LIMITS() function is linear time O(N) plus constant time O(1) which results in linear big-O time O(N).
